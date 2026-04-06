@@ -1,15 +1,27 @@
 {
   "runs": [
       {
-        "breed_time": 0,
-        "energy_gain": 0,
-        "breed_energy": 0,
-        "dims": [0, 0],
-        "initial_fish": 0,
-        "initial_sharks": 0,
-        "steps": 0,
-        "basicSetup": false,
-        "attempts": 0
+        "breed_time": 2,
+        "energy_gain": 4,
+        "breed_energy": 10,
+        "dims": [150, 200],
+        "initial_fish": 2000,
+        "initial_sharks": 1000,
+        "steps": 500,
+        "basicSetup": true,
+        "attempts": 1,
+        "changesPerAttempt": [
+          {
+            "d_breed_time" : 0,
+            "d_energy_gain": 0,
+            "d_breed_energy": 0,
+            "d_dims": [150, 200],
+            "d_initial_fish": 0,
+            "d_initial_sharks": 0,
+            "d_steps": 0
+          }
+
+        ]
       }
     
   ]

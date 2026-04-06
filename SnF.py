@@ -9,16 +9,16 @@ import imageio.v2 as io #Library for converting a collection of image files to a
 import shutil
 
 #Main parameters of the simulation
-breed_time = 2 #Number of steps before a fish is capable of duplicating
-energy_gain = 4 #Additional steps granted to a shark after eating a fish
-breed_energy = 10 #Number of stored steps before a shark is capable of duplicating
+breed_time = int(sys.argv[1]) #Number of steps before a fish is capable of duplicating #int
+energy_gain = int(sys.argv[2]) #Additional steps granted to a shark after eating a fish #int
+breed_energy = int(sys.argv[3]) #Number of stored steps before a shark is capable of duplicating #int
 
 #Other simulation parameters
-dims = [150,200] #Size of the simulation window
-initial_fish = 2000
-initial_sharks = 1000
-steps = 500 #Time duration of the simulation
-basicSetup = True #A random initial distribution (or not)
+dims = [int(sys.argv[4]),int(sys.argv[5])] #Size of the simulation window
+initial_fish = int(sys.argv[6])
+initial_sharks = int(sys.argv[7])
+steps = int(sys.argv[8]) #Time duration of the simulation
+basicSetup = sys.argv[9] #A random initial distribution (or not) # if anything here then it'll be true
 
 #Create a list of the row indexes of the game array
 ilist = []
