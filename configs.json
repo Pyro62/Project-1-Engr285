@@ -1,0 +1,16 @@
+{
+  "runs": [
+      {
+        "breed_time": 0,
+        "energy_gain": 0,
+        "breed_energy": 0,
+        "dims": [0, 0],
+        "initial_fish": 0,
+        "initial_sharks": 0,
+        "steps": 0,
+        "basicSetup": false,
+        "attempts": 0
+      }
+    
+  ]
+}
