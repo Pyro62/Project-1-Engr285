@@ -10,7 +10,7 @@
         "initial_sharks": 1000,
         "steps": 500,
         "basicSetup": true,
-        "attempts": 3,
+        "attempts": 1,
         "changesPerAttempt": [
           {
             "d_breed_time" : 0,

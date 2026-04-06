@@ -18,7 +18,13 @@ dims = [int(sys.argv[4]),int(sys.argv[5])] #Size of the simulation window
 initial_fish = int(sys.argv[6])
 initial_sharks = int(sys.argv[7])
 steps = int(sys.argv[8]) #Time duration of the simulation
-basicSetup = sys.argv[9] #A random initial distribution (or not) # if anything here then it'll be true
+basicSetup = True #A random initial distribution (or not) # if anything here then it'll be true
+if str(sys.argv[9]).lower() == "true":
+    basicSetup = True
+else:
+    basicSetup = False
+print(basicSetup)
+# to fix, basicsetup is false?
 attempt = int(sys.argv[10])
 #Create a list of the row indexes of the game array
 ilist = []

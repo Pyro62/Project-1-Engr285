@@ -28,9 +28,9 @@ for run in runs:
                     str(run["steps"]+(i*changes["d_steps"])),
                     str(run["basicSetup"]),
                     str(i)]
-        subprocess.run(command, cwd=script_dir)
-
-
-
-
-
+        try:
+            subprocess.run(command, cwd=script_dir, check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Run {i} failed with error {e}")
+            sys.exit()
+            
