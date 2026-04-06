@@ -10,7 +10,7 @@
         "initial_sharks": 1000,
         "steps": 500,
         "basicSetup": true,
-        "attempts": 1,
+        "attempts": 3,
         "changesPerAttempt": [
           {
             "d_breed_time" : 0,
@@ -18,7 +18,7 @@
             "d_breed_energy": 0,
             "d_dims_x": 0,
             "d_dims_y": 0,
-            "d_initial_fish": 0,
+            "d_initial_fish": 100,
             "d_initial_sharks": 0,
             "d_steps": 0
           }
