@@ -19,7 +19,7 @@ initial_fish = int(sys.argv[6])
 initial_sharks = int(sys.argv[7])
 steps = int(sys.argv[8]) #Time duration of the simulation
 basicSetup = sys.argv[9] #A random initial distribution (or not) # if anything here then it'll be true
-
+attempt = int(sys.argv[10])
 #Create a list of the row indexes of the game array
 ilist = []
 for i in range(dims[0]):
@@ -244,7 +244,7 @@ print('Complete!')
 print('WARNING: Output files may be overwritten upon next run,')
 print('to be safe be sure to move them out of the current folder!')
 
-directoryName = 'SnF_Run_'+str(dims[1])+'x'+str(dims[0])+'_('+str(breed_time)+','+str(energy_gain)+','+str(breed_energy)+')_('+str(initial_sharks)+','+str(initial_fish)+')_'+str(actual_steps)
+directoryName = 'SnF_Run_'+str(attempt)+"_"+str(dims[1])+'x'+str(dims[0])+'_('+str(breed_time)+','+str(energy_gain)+','+str(breed_energy)+')_('+str(initial_sharks)+','+str(initial_fish)+')_'+str(actual_steps)
 os.mkdir(directoryName)
 shutil.move(plotname,directoryName)
 shutil.move(filename,directoryName)

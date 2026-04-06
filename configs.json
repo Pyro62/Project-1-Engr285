@@ -18,7 +18,7 @@
             "d_breed_energy": 0,
             "d_dims_x": 0,
             "d_dims_y": 0,
-            "d_initial_fish": 100,
+            "d_initial_fish": 0,
             "d_initial_sharks": 0,
             "d_steps": 0
           }

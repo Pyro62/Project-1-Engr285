@@ -26,7 +26,8 @@ for run in runs:
                     str(run["initial_fish"]+(i*changes["d_initial_fish"])),
                     str(run["initial_sharks"]+(i*changes["d_initial_sharks"])),
                     str(run["steps"]+(i*changes["d_steps"])),
-                    str(run["basicSetup"])]
+                    str(run["basicSetup"]),
+                    str(i)]
         subprocess.run(command, cwd=script_dir)
 
 
