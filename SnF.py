@@ -64,6 +64,51 @@ def nest_union(list1, list2):
     return list(map(list, set(map(tuple, list1)) | set(map(tuple, list2))))
 
 #Main function of the simulation, updates the game array including all movements, hunts, breedings, and deaths
+def step_fish(i,j,old_array,new_array, old_locations,new_locations):
+    old_locations = remove_occupied(old_locations)
+    new_locations = remove_occupied(new_locations)
+    available_locations = nest_intersection(old_locations, new_locations) #Determines which adjacent spaces are free in both arrays
+    if len(available_locations) != 0: #Check if there are any options
+        chosen_location = available_locations[randint(0, len(available_locations)-1)] #Randomly choose one of the options
+        if breed_time < old_array[i][j]: #Check if the fish is elligible to breed
+            new_array[chosen_location[0]][chosen_location[1]] = 1 #Place a new fish in that location
+            new_array[i][j] = 1 #Reset the fish that just bred
+        else: #Otherwise the fish only moves
+            new_array[chosen_location[0]][chosen_location[1]] = old_array[i][j] + 1 #The fish moves to the new game array with an increment to its breeding timer
+    else: #If there are no options, the fish does not breed or move
+        new_array[i][j] = old_array[i][j] #The fish moves to the new game array without resetting 
+    old_array[i][j] = 0 #Removes the fish from the previous game array (so that it doesn't move/breed twice)
+
+def step_shark(i,j,old_array,new_array, old_locations,new_locations):
+    save_old_locations = old_locations #Save the old locations in case there are no fish nearby
+    save_new_locations = new_locations #Save the new locations in case there are no fish nearby
+    old_locations = find_fish_occupied(old_locations)
+    new_locations = find_fish_occupied(new_locations)
+    available_locations = nest_union(old_locations, new_locations) #Find all nearby fish locations in either game array (whether they've been updated or not)
+    if len(available_locations) != 0: #Check if there are any options
+        chosen_location = available_locations[randint(0, len(available_locations)-1)] #Choose one of the adjacent fish randomly
+        if -breed_energy > old_array[i][j] - energy_gain: #Check if the shark is elligible to breed
+            new_array[chosen_location[0]][chosen_location[1]] = round((old_array[i][j] - energy_gain)/ 2) #Moves the shark to the new game array with half its energy
+            new_array[i][j] = (old_array[i][j] - energy_gain) - round((old_array[i][j] - energy_gain)/ 2) #Creates a new shark at the previous position with the other half of the energy
+        else:
+            new_array[chosen_location[0]][chosen_location[1]] = old_array[i][j] - energy_gain #Moves the shark to the new game array with an increase in energy
+        if old_array[chosen_location[0]][chosen_location[1]] > 0: #Only need to remove the dead fish if it came from the old array
+            old_array[chosen_location[0]][chosen_location[1]] = 0 #Removes the dead fish
+    else: #Implement shark moving
+        old_locations = remove_occupied(save_old_locations)
+        new_locations = remove_occupied(save_new_locations)
+        available_locations = nest_intersection(old_locations, new_locations) #Determines which adjacent spaces are free in both arrays (i.e. actually empty)
+        if len(available_locations) != 0: #Check if there are any options
+            chosen_location = available_locations[randint(0, len(available_locations)-1)] #Randomly choose one of the options
+            if -breed_energy > old_array[i][j]: #Check if the shark is elligible to breed
+                new_array[chosen_location[0]][chosen_location[1]] = round(old_array[i][j] / 2) #Moves the reset shark to the new game array with half its energy
+                new_array[i][j] = old_array[i][j] - round(old_array[i][j] / 2) #Creates a new shark at the previous position with the other half of the energy
+            else:
+                new_array[chosen_location[0]][chosen_location[1]] = old_array[i][j] + 1 #The shark moves to the new game array with one less energy (or dies)
+        else: #If the shark can't move, it stays in place
+            new_array[i][j] = old_array[i][j] + 1 #The shark moves to the new game array with one less energy (or dies)
+    old_array[i][j] = 0
+
 def step_game(old_array):
     global ilist, jlist
     new_array = zeros((dims[0], dims[1]), dtype=int) #Creates the next game array
@@ -78,48 +123,10 @@ def step_game(old_array):
                     old_locations.append([indices, old_array[indices[0]][indices[1]]]) #...append a pair including the old array value at that location
                     new_locations.append([indices, new_array[indices[0]][indices[1]]]) #...append a pair including the new array value at that location
                 if 0 < old_array[i][j]: #Check if a fish occupies the space
-                    old_locations = remove_occupied(old_locations)
-                    new_locations = remove_occupied(new_locations)
-                    available_locations = nest_intersection(old_locations, new_locations) #Determines which adjacent spaces are free in both arrays
-                    if len(available_locations) != 0: #Check if there are any options
-                        chosen_location = available_locations[randint(0, len(available_locations)-1)] #Randomly choose one of the options
-                        if breed_time < old_array[i][j]: #Check if the fish is elligible to breed
-                            new_array[chosen_location[0]][chosen_location[1]] = 1 #Place a new fish in that location
-                            new_array[i][j] = 1 #Reset the fish that just bred
-                        else: #Otherwise the fish only moves
-                            new_array[chosen_location[0]][chosen_location[1]] = old_array[i][j] + 1 #The fish moves to the new game array with an increment to its breeding timer
-                    else: #If there are no options, the fish does not breed or move
-                        new_array[i][j] = old_array[i][j] #The fish moves to the new game array without resetting
-                    old_array[i][j] = 0 #Removes the fish from the previous game array (so that it doesn't move/breed twice)
+                    step_fish(i,j,old_array,new_array, old_locations,new_locations)
                 else: #If an occupied space is not a fish, then it must be a shark
-                    save_old_locations = old_locations #Save the old locations in case there are no fish nearby
-                    save_new_locations = new_locations #Save the new locations in case there are no fish nearby
-                    old_locations = find_fish_occupied(old_locations)
-                    new_locations = find_fish_occupied(new_locations)
-                    available_locations = nest_union(old_locations, new_locations) #Find all nearby fish locations in either game array (whether they've been updated or not)
-                    if len(available_locations) != 0: #Check if there are any options
-                        chosen_location = available_locations[randint(0, len(available_locations)-1)] #Choose one of the adjacent fish randomly
-                        if -breed_energy > old_array[i][j] - energy_gain: #Check if the shark is elligible to breed
-                            new_array[chosen_location[0]][chosen_location[1]] = round((old_array[i][j] - energy_gain)/ 2) #Moves the shark to the new game array with half its energy
-                            new_array[i][j] = (old_array[i][j] - energy_gain) - round((old_array[i][j] - energy_gain)/ 2) #Creates a new shark at the previous position with the other half of the energy
-                        else:
-                            new_array[chosen_location[0]][chosen_location[1]] = old_array[i][j] - energy_gain #Moves the shark to the new game array with an increase in energy
-                        if old_array[chosen_location[0]][chosen_location[1]] > 0: #Only need to remove the dead fish if it came from the old array
-                            old_array[chosen_location[0]][chosen_location[1]] = 0 #Removes the dead fish
-                    else: #Implement shark moving
-                        old_locations = remove_occupied(save_old_locations)
-                        new_locations = remove_occupied(save_new_locations)
-                        available_locations = nest_intersection(old_locations, new_locations) #Determines which adjacent spaces are free in both arrays (i.e. actually empty)
-                        if len(available_locations) != 0: #Check if there are any options
-                            chosen_location = available_locations[randint(0, len(available_locations)-1)] #Randomly choose one of the options
-                            if -breed_energy > old_array[i][j]: #Check if the shark is elligible to breed
-                                new_array[chosen_location[0]][chosen_location[1]] = round(old_array[i][j] / 2) #Moves the reset shark to the new game array with half its energy
-                                new_array[i][j] = old_array[i][j] - round(old_array[i][j] / 2) #Creates a new shark at the previous position with the other half of the energy
-                            else:
-                                new_array[chosen_location[0]][chosen_location[1]] = old_array[i][j] + 1 #The shark moves to the new game array with one less energy (or dies)
-                        else: #If the shark can't move, it stays in place
-                            new_array[i][j] = old_array[i][j] + 1 #The shark moves to the new game array with one less energy (or dies)
-                old_array[i][j] = 0 #Removes the entity from the old game array (so that it doesn't eat/move/breed twice)
+                   step_shark(i,j,old_array,new_array, old_locations,new_locations)
+
     return new_array #Outputs the updated game array
 
 #Function that counts the total number of fish and sharks in the game array
@@ -224,7 +231,15 @@ totaldata = []
 for imgpath in imgPaths: #Read in all the image data
     currdata = io.imread(imgpath)
     totaldata.append(currdata)
-    
+
+directoryName = 'SnF_Run_'+str(attempt)+"_"+str(dims[1])+'x'+str(dims[0])+'_('+str(breed_time)+','+str(energy_gain)+','+str(breed_energy)+')_('+str(initial_sharks)+','+str(initial_fish)+')_'+str(actual_steps)
+if not os.path.exists(directoryName):
+    os.mkdir(directoryName)
+else:
+    for imgname in imgnames: #Remove all the png image files after the gif is created
+        os.remove(imgname)
+    sys.exit("Error: directory already exists! ")
+
 print('Writing gif file...')
     
 io.mimwrite(filename, totaldata, format= '.gif', fps = 20) #Convert all the images into a gif
@@ -250,7 +265,7 @@ print('Complete!')
 print('WARNING: Output files may be overwritten upon next run,')
 print('to be safe be sure to move them out of the current folder!')
 
-directoryName = 'SnF_Run_'+str(attempt)+"_"+str(dims[1])+'x'+str(dims[0])+'_('+str(breed_time)+','+str(energy_gain)+','+str(breed_energy)+')_('+str(initial_sharks)+','+str(initial_fish)+')_'+str(actual_steps)
-os.mkdir(directoryName)
+
+
 shutil.move(plotname,directoryName)
 shutil.move(filename,directoryName)
