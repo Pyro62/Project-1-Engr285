@@ -1,13 +1,13 @@
 {
   "runs": [
       {
-        "breed_time": 2,
-        "energy_gain": 4,
-        "breed_energy": 10,
+        "breed_time": 12,
+        "energy_gain": 10,
+        "breed_energy": 50,
         "dims_x": 150,
         "dims_y": 200,
-        "initial_fish": 2000,
-        "initial_sharks": 1000,
+        "initial_fish": 100,
+        "initial_sharks": 40,
         "steps": 500,
         "basicSetup": true,
         "attempts": 1,
@@ -25,6 +25,7 @@
 
         ]
       }
+
     
   ]
 }

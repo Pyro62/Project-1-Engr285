@@ -79,37 +79,117 @@ def step_fish(i,j,old_array,new_array, old_locations,new_locations):
         new_array[i][j] = old_array[i][j] #The fish moves to the new game array without resetting 
     old_array[i][j] = 0 #Removes the fish from the previous game array (so that it doesn't move/breed twice)
 
-def step_shark(i,j,old_array,new_array, old_locations,new_locations):
-    save_old_locations = old_locations #Save the old locations in case there are no fish nearby
-    save_new_locations = new_locations #Save the new locations in case there are no fish nearby
+def step_shark(i, j, old_array, new_array, direction_array, old_locations, new_locations):
+    current_dir = direction_array[i][j]
+    energy = old_array[i][j]  # negative integer
+    hunger_threshold = -breed_energy // 2  # hungrier than half max energy
+
+    # --- Determine sensing radius based on hunger ---
+    if energy > hunger_threshold:  # very hungry (energy closer to 0)
+        radius = 2
+    else:
+        radius = 1  # well-fed, only immediate neighbors
+
+    # --- Hunt: find fish within range ---
+    save_old_locations = old_locations
+    save_new_locations = new_locations
     old_locations = find_fish_occupied(old_locations)
     new_locations = find_fish_occupied(new_locations)
-    available_locations = nest_union(old_locations, new_locations) #Find all nearby fish locations in either game array (whether they've been updated or not)
-    if len(available_locations) != 0: #Check if there are any options
-        chosen_location = available_locations[randint(0, len(available_locations)-1)] #Choose one of the adjacent fish randomly
-        if -breed_energy > old_array[i][j] - energy_gain: #Check if the shark is elligible to breed
-            new_array[chosen_location[0]][chosen_location[1]] = round((old_array[i][j] - energy_gain)/ 2) #Moves the shark to the new game array with half its energy
-            new_array[i][j] = (old_array[i][j] - energy_gain) - round((old_array[i][j] - energy_gain)/ 2) #Creates a new shark at the previous position with the other half of the energy
+    immediate_fish = nest_union(old_locations, new_locations)
+
+    if radius == 2 and len(immediate_fish) == 0:
+        extended_fish = find_fish_in_range(i, j, old_array, radius=2)
+        # Only keep fish reachable in one step (adjacent) but bias toward
+        # the direction of the nearest detected fish
+        if len(extended_fish) > 0:
+            target = extended_fish[0]  # closest fish
+            di = target[0] - i
+            dj = target[1] - j
+            # Clamp to one step in the dominant direction
+            step_di = 1 if di > 0 else (-1 if di < 0 else 0)
+            step_dj = 1 if dj > 0 else (-1 if dj < 0 else 0)
+            candidate = [(i+step_di)%dims[0], (j+step_dj)%dims[1]]
+            # Only move there if it's actually empty
+            if new_array[candidate[0]][candidate[1]] == 0 and old_array[candidate[0]][candidate[1]] == 0:
+                chosen_location = candidate
+                new_energy = energy + 1  # costs energy to move, no meal
+                new_array[chosen_location[0]][chosen_location[1]] = new_energy
+                direction_array[chosen_location[0]][chosen_location[1]] = delta_to_dir(step_di, step_dj)
+                old_array[i][j] = 0
+                direction_array[i][j] = 0
+                return
+
+    # eat fish if close enough
+    if len(immediate_fish) != 0:
+        # bias fish in current direction
+        if current_dir != 0:
+            dr, dc = dir_to_delta(current_dir)
+            preferred = [(i+dr)%dims[0], (j+dc)%dims[1]]
+            if preferred in immediate_fish:
+                chosen_location = preferred
+            else:
+                chosen_location = immediate_fish[randint(0, len(immediate_fish)-1)]
         else:
-            new_array[chosen_location[0]][chosen_location[1]] = old_array[i][j] - energy_gain #Moves the shark to the new game array with an increase in energy
-        if old_array[chosen_location[0]][chosen_location[1]] > 0: #Only need to remove the dead fish if it came from the old array
-            old_array[chosen_location[0]][chosen_location[1]] = 0 #Removes the dead fish
-    else: #Implement shark moving
+            chosen_location = immediate_fish[randint(0, len(immediate_fish)-1)]
+
+        new_energy = energy - energy_gain
+        di = (chosen_location[0]-i) % dims[0]
+        dj = (chosen_location[1]-j) % dims[1]
+        if di > dims[0]//2: di -= dims[0]
+        if dj > dims[1]//2: dj -= dims[1]
+        new_dir = delta_to_dir(di, dj)
+
+        if -breed_energy > new_energy:
+            new_array[chosen_location[0]][chosen_location[1]] = round(new_energy / 2)
+            new_array[i][j] = new_energy - round(new_energy / 2)
+            direction_array[chosen_location[0]][chosen_location[1]] = new_dir
+            direction_array[i][j] = current_dir
+        else:
+            new_array[chosen_location[0]][chosen_location[1]] = new_energy
+            direction_array[chosen_location[0]][chosen_location[1]] = new_dir
+
+        if old_array[chosen_location[0]][chosen_location[1]] > 0:
+            old_array[chosen_location[0]][chosen_location[1]] = 0
+
+    else:
+        #No fish then just move with directional persistence 
         old_locations = remove_occupied(save_old_locations)
         new_locations = remove_occupied(save_new_locations)
-        available_locations = nest_intersection(old_locations, new_locations) #Determines which adjacent spaces are free in both arrays (i.e. actually empty)
-        if len(available_locations) != 0: #Check if there are any options
-            chosen_location = available_locations[randint(0, len(available_locations)-1)] #Randomly choose one of the options
-            if -breed_energy > old_array[i][j]: #Check if the shark is elligible to breed
-                new_array[chosen_location[0]][chosen_location[1]] = round(old_array[i][j] / 2) #Moves the reset shark to the new game array with half its energy
-                new_array[i][j] = old_array[i][j] - round(old_array[i][j] / 2) #Creates a new shark at the previous position with the other half of the energy
-            else:
-                new_array[chosen_location[0]][chosen_location[1]] = old_array[i][j] + 1 #The shark moves to the new game array with one less energy (or dies)
-        else: #If the shark can't move, it stays in place
-            new_array[i][j] = old_array[i][j] + 1 #The shark moves to the new game array with one less energy (or dies)
-    old_array[i][j] = 0
+        available_locations = nest_intersection(old_locations, new_locations)
 
-def step_game(old_array):
+        if len(available_locations) != 0:
+            # bias toward current direction
+            chosen_location = None
+            if current_dir != 0:
+                dr, dc = dir_to_delta(current_dir)
+                preferred = [(i+dr)%dims[0], (j+dc)%dims[1]]
+                if preferred in available_locations and random() < 0.65:  # 65% chance to continue direction
+                    chosen_location = preferred
+            if chosen_location is None:
+                chosen_location = available_locations[randint(0, len(available_locations)-1)]
+
+            di = (chosen_location[0]-i) % dims[0]
+            dj = (chosen_location[1]-j) % dims[1]
+            if di > dims[0]//2: di -= dims[0]
+            if dj > dims[1]//2: dj -= dims[1]
+            new_dir = delta_to_dir(di, dj)
+
+            if -breed_energy > energy:
+                new_array[chosen_location[0]][chosen_location[1]] = round(energy / 2)
+                new_array[i][j] = energy - round(energy / 2)
+                direction_array[chosen_location[0]][chosen_location[1]] = new_dir
+                direction_array[i][j] = current_dir
+            else:
+                new_array[chosen_location[0]][chosen_location[1]] = energy + 1
+                direction_array[chosen_location[0]][chosen_location[1]] = new_dir
+        else:
+            new_array[i][j] = energy + 1  # stuck, lose energy
+
+    old_array[i][j] = 0
+    if new_array[i][j] == 0:  # only zero direction if shark actually left
+        direction_array[i][j] = 0
+
+def step_game(old_array,direction_array):
     global ilist, jlist
     new_array = zeros((dims[0], dims[1]), dtype=int) #Creates the next game array
     shuffle(ilist) #Randomize the order of the row indices each time (helps keep the processes uniformly random)
@@ -125,7 +205,7 @@ def step_game(old_array):
                 if 0 < old_array[i][j]: #Check if a fish occupies the space
                     step_fish(i,j,old_array,new_array, old_locations,new_locations)
                 else: #If an occupied space is not a fish, then it must be a shark
-                   step_shark(i,j,old_array,new_array, old_locations,new_locations)
+                   step_shark(i,j,old_array,new_array, direction_array, old_locations,new_locations)
 
     return new_array #Outputs the updated game array
 
@@ -153,6 +233,26 @@ def create_img_array(game_array):
     return img_array
 
 game_array = zeros((dims[0],dims[1]), dtype=int) #Initialize the game array
+direction_array = zeros((dims[0], dims[1]), dtype=int)
+# Encoding: 0=none, 1=up, 2=down, 3=left, 4=right, direction arr for shark pathfinding
+
+def dir_to_delta(d):
+    return {1: (-1,0), 2: (1,0), 3: (0,-1), 4: (0,1)}.get(d, (0,0))
+#converts direction to row/col deltas
+def delta_to_dir(di, dj):
+    return {(-1,0):1, (1,0):2, (0,-1):3, (0,1):4}.get((di,dj), 0)
+
+def find_fish_in_range(i, j, old_array, radius=2):
+    found = [] # finds fish in radius 2, returns sorted by distance
+    for di in range(-radius, radius+1):
+        for dj in range(-radius, radius+1):
+            if abs(di)+abs(dj) == 0 or abs(di)+abs(dj) > radius:
+                continue
+            ni, nj = (i+di)%dims[0], (j+dj)%dims[1]
+            if old_array[ni][nj] > 0:
+                found.append(([ni, nj], abs(di)+abs(dj)))
+    found.sort(key=lambda x: x[1])  # closest first
+    return [f[0] for f in found]
 
 if basicSetup == True: #The basic set-up with random placement of new fish and sharks
     for k in range(initial_fish): #Randomly populate the game array with new initial fish
@@ -192,7 +292,7 @@ prcnt = 0
 k = 1 #Initialize a counter for the number of steps
 actual_steps = steps #Initialize a separate variable to record how many steps the simulation actually runs
 while k <= steps:
-    game_array = step_game(game_array) #Update the game array
+    game_array = step_game(game_array, direction_array) #Update the game array
     currcount = countsNf(game_array) #Counts the number of fish and sharks
     fishes.append(currcount[1]) #Store the number data
     sharks.append(currcount[0])
